@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AirSketch Arena
 
 A production-style real-time multiplayer drawing and guessing game inspired by Scribbl.io, built with React, Vite, TailwindCSS, Framer Motion, Express, Socket.IO, MongoDB, JWT auth, and MediaPipe hand tracking.
@@ -55,3 +56,7 @@ npm run dev
 npm run build --workspace client
 npm run start --workspace server
 ```
+=======
+# AirSketch-Arena
+AirSketch Arena is a real-time multiplayer drawing &amp; guessing game inspired by Scribbl.io. Built with React, Node.js, Socket.IO, and MongoDB, it features live canvas sync, room invites, leaderboards, rematches, chat, random word categories, and AI-powered hand-tracking drawing.
+>>>>>>> 3d1f131258be79a43ba03f657d28bd507896567f
