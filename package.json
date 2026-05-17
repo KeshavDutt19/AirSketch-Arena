@@ -1,0 +1,19 @@
+{
+  "name": "airsketch-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack real-time multiplayer drawing and guessing game with AI hand gesture drawing.",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
+    "lint": "npm run lint --workspace client && npm run lint --workspace server"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
