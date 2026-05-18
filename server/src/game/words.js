@@ -89,8 +89,8 @@ export function revealNextIndex(word = "", revealedIndexes = []) {
   return [...revealedIndexes, next];
 }
 
-export function generateThemeWords(theme = "future arcade") {
-  const clean = theme.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim() || "future arcade";
+export function generateThemeWords(theme = "custom") {
+  const clean = theme.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim() || "custom";
   return [
     `${clean} hero`,
     `${clean} machine`,

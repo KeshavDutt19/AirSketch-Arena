@@ -21,9 +21,14 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
   const [rematch, setRematch] = useState(null);
   const [rematchCountdown, setRematchCountdown] = useState(null);
   const [loadingAction, setLoadingAction] = useState("");
+  const [nameDraft, setNameDraft] = useState(user.username || "");
   const isDrawer = room.drawerId === user.id;
   const canDraw = isDrawer && room.status === "playing";
   const inviteUrl = `${window.location.origin}/room/${room.code}`;
+
+  useEffect(() => {
+    setNameDraft(user.username || "");
+  }, [user.username]);
 
   const sendStroke = useCallback((stroke) => {
     socket.emit("canvas:stroke", { code: room.code, stroke });
@@ -35,7 +40,9 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
     canvasRef: canvas.canvasRef,
     onBegin: canvas.begin,
     onMove: canvas.move,
-    onEnd: canvas.end
+    onEnd: canvas.end,
+    color: canvas.tool.color,
+    brushSize: canvas.tool.size
   });
 
   const playSound = useCallback((type) => {
@@ -121,7 +128,6 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
       });
     };
     const onPlayerUpdated = ({ id, username }) => {
-      if (id === user.id) onUserChange?.(username);
       setMessages((items) => items.map((message) => (message.userId === id ? { ...message, username } : message)));
     };
     socket.on("room:state", onState);
@@ -234,9 +240,8 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
     }
   }
 
-  function updateName(value) {
-    const nextUser = onUserChange?.(value) || { ...user, username: value.trim() };
-    socket.emit("profile:update", { profile: nextUser });
+  function saveName(value) {
+    onUserChange?.(value);
   }
 
   return (
@@ -253,8 +258,9 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
           </div>
           <div className="flex flex-wrap items-center justify-end gap-4">
             <input
-              value={user.username || ""}
-              onChange={(event) => updateName(event.target.value)}
+              value={nameDraft}
+              onChange={(event) => setNameDraft(event.target.value)}
+              onBlur={(event) => saveName(event.target.value)}
               placeholder="Name"
               className="w-28 bg-white/5 px-2 py-1 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop"
             />
@@ -282,6 +288,7 @@ export function GameScreen({ room, setRoom, socket, socketStatus, user, onUserCh
         </div>
         <section className="relative min-h-[520px] overflow-hidden border border-cyanpop/20 bg-white shadow-neon">
           <canvas ref={canvas.canvasRef} className="h-full min-h-[520px] w-full touch-none bg-[#fbfdff]" {...(!airMode && canDraw ? canvas.pointerHandlers : {})} />
+          <canvas ref={canvas.previewRef} className="pointer-events-none absolute inset-0 h-full min-h-[520px] w-full" />
           {airMode && <video ref={hand.videoRef} muted playsInline className="absolute bottom-3 left-3 w-36 border border-white/20 opacity-70" />}
           {airMode && <canvas ref={hand.overlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />}
           {!isDrawer && room.status === "choosing" && <div className="absolute inset-x-0 top-0 bg-void/70 p-2 text-center text-sm text-slate-200">Drawer choosing word... {choiceSeconds}s</div>}

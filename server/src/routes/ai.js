@@ -5,11 +5,11 @@ import { sanitizeText } from "../utils/security.js";
 
 const router = Router();
 
-router.use(authRequired);
-
 router.get("/word-themes", (req, res) => {
   res.json({ themes: getWordThemes() });
 });
+
+router.use(authRequired);
 
 router.post("/hint", (req, res) => {
   const partial = sanitizeText(req.body.partial || "mysterious drawing", 80);

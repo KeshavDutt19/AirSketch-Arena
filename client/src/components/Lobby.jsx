@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, LogIn, Plus, Wifi, WifiOff, Wand2 } from "lucide-react";
+import { Check, Copy, LogIn, Plus, Wifi, WifiOff } from "lucide-react";
 import { GlassPanel } from "./GlassPanel.jsx";
 import { api } from "../api.js";
 
 export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, onUserChange }) {
   const [username, setUsername] = useState(user?.username || "");
   const [code, setCode] = useState(initialCode);
-  const [theme, setTheme] = useState("future arcade");
   const [wordTheme, setWordTheme] = useState("all");
   const [difficulty, setDifficulty] = useState("medium");
-  const [words, setWords] = useState(["cyber dragon", "moon base", "portal"]);
+  const [customWords, setCustomWords] = useState("");
+  const [themes, setThemes] = useState([{ value: "all", label: "Random All" }]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState("");
 
@@ -22,17 +22,44 @@ export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, on
     if (initialCode) setCode(initialCode);
   }, [initialCode]);
 
-  function updateName(value) {
-    setUsername(value);
-    const nextUser = onUserChange?.(value) || { ...user, username: value.trim() };
-    socket.emit("profile:update", { profile: nextUser });
+  useEffect(() => {
+    let mounted = true;
+    api("/api/ai/word-themes")
+      .then((data) => {
+        if (mounted && data.themes?.length) setThemes(data.themes);
+      })
+      .catch(() => {
+        if (mounted) {
+          setThemes([
+            { value: "all", label: "Random All" },
+            { value: "fruits", label: "Fruits" },
+            { value: "animals", label: "Animals" },
+            { value: "cars", label: "Car Brands" },
+            { value: "car-logos", label: "Car Logos" },
+            { value: "sports", label: "Sports" },
+            { value: "movies", label: "Movies" },
+            { value: "cartoons", label: "Cartoons and Anime" },
+            { value: "brands", label: "Famous Brands" },
+            { value: "food", label: "Food" },
+            { value: "technology", label: "Technology" },
+            { value: "games", label: "Games" },
+            { value: "superheroes", label: "Superheroes" },
+            { value: "nature", label: "Nature" },
+            { value: "places", label: "Places" }
+          ]);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function saveName() {
+    return onUserChange?.(username) || { ...user, username: username.trim() || "Guest" };
   }
 
   function activeProfile() {
-    const clean = username.trim() || "Guest";
-    const nextUser = onUserChange?.(clean) || { ...user, username: clean };
-    socket.emit("profile:update", { profile: nextUser });
-    return nextUser;
+    return saveName();
   }
 
   async function createRoom() {
@@ -47,7 +74,7 @@ export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, on
     console.log("Emitting room:create");
     socket.timeout(8000).emit("room:create", {
       settings: {
-        wordPack: wordTheme === "custom" ? words : [],
+        wordPack: wordTheme === "custom" ? customWordPack() : [],
         wordTheme,
         difficulty
       },
@@ -97,17 +124,12 @@ export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, on
     });
   }
 
-  async function generateWords() {
-    try {
-      setError("");
-      setLoading("words");
-      const data = await api("/api/ai/word-theme", { method: "POST", body: JSON.stringify({ theme }) });
-      setWords(data.words);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading("");
-    }
+  function customWordPack() {
+    return customWords
+      .split(/[,\n]/)
+      .map((word) => word.trim())
+      .filter(Boolean)
+      .slice(0, 80);
   }
 
   return (
@@ -124,27 +146,24 @@ export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, on
           <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-black">Create Lobby</motion.h2>
           <div className="mt-6 grid gap-4">
             <label className="grid gap-2 text-sm text-slate-300">
-              Pilot name
-              <input value={username} onChange={(e) => updateName(e.target.value)} placeholder="Your display name" className="bg-white/5 p-3 text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop" />
+              Player name
+              <div className="flex gap-2">
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onBlur={saveName}
+                  placeholder="Your display name"
+                  className="min-w-0 flex-1 bg-white/5 p-3 text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop"
+                />
+                <button onClick={saveName} className="bg-limepop px-4 text-void"><Check /></button>
+              </div>
             </label>
             <label className="grid gap-2 text-sm text-slate-300">
               Word theme
               <select value={wordTheme} onChange={(e) => setWordTheme(e.target.value)} className="bg-white/5 p-3 text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop">
-                <option className="bg-void" value="all">Random All</option>
-                <option className="bg-void" value="fruits">Only Fruits</option>
-                <option className="bg-void" value="animals">Only Animals</option>
-                <option className="bg-void" value="cars">Only Cars</option>
-                <option className="bg-void" value="car-logos">Car Logos</option>
-                <option className="bg-void" value="sports">Only Sports</option>
-                <option className="bg-void" value="movies">Movies</option>
-                <option className="bg-void" value="cartoons">Cartoons and Anime</option>
-                <option className="bg-void" value="brands">Famous Brands</option>
-                <option className="bg-void" value="food">Food</option>
-                <option className="bg-void" value="technology">Technology</option>
-                <option className="bg-void" value="games">Games</option>
-                <option className="bg-void" value="superheroes">Superheroes</option>
-                <option className="bg-void" value="nature">Nature</option>
-                <option className="bg-void" value="places">Places</option>
+                {themes.map((theme) => (
+                  <option key={theme.value} className="bg-void" value={theme.value}>{theme.label}</option>
+                ))}
                 <option className="bg-void" value="custom">AI Custom Theme</option>
               </select>
             </label>
@@ -158,16 +177,17 @@ export function Lobby({ user, socket, socketStatus, initialCode = "", onRoom, on
                 ))}
               </div>
             </label>
-            <label className={`grid gap-2 text-sm text-slate-300 ${wordTheme !== "custom" ? "opacity-50" : ""}`}>
-              AI custom words
-              <div className="flex gap-2">
-                <input disabled={wordTheme !== "custom"} value={theme} onChange={(e) => setTheme(e.target.value)} className="min-w-0 flex-1 bg-white/5 p-3 text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop disabled:cursor-not-allowed" />
-                <button disabled={loading === "words" || wordTheme !== "custom"} onClick={generateWords} className="bg-magenta px-4 text-white shadow-hot disabled:opacity-60"><Wand2 /></button>
-              </div>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {words.map((word) => <span key={word} className="border border-cyanpop/30 bg-cyanpop/10 px-3 py-2 text-cyanpop">{word}</span>)}
-            </div>
+            {wordTheme === "custom" && (
+              <label className="grid gap-2 text-sm text-slate-300">
+                Custom words
+                <textarea
+                  value={customWords}
+                  onChange={(event) => setCustomWords(event.target.value)}
+                  placeholder="Type words separated by commas or new lines"
+                  className="min-h-24 bg-white/5 p-3 text-white outline-none ring-1 ring-white/10 focus:ring-cyanpop"
+                />
+              </label>
+            )}
             <button disabled={loading === "create"} onClick={createRoom} className="inline-flex items-center justify-center gap-2 bg-cyanpop p-4 font-bold text-void disabled:opacity-60">
               <Plus /> {loading === "create" ? "Creating..." : "Create Room"}
             </button>

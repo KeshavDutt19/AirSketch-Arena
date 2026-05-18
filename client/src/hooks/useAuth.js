@@ -44,7 +44,7 @@ export function useAuth() {
   }
 
   function updateUsername(username) {
-    const nextUser = { id: user?.id || createLocalId(), username: cleanUsername(username) };
+    const nextUser = { id: user?.id || createLocalId(), username: cleanUsername(username) || "Guest" };
     setUser(nextUser);
     return nextUser;
   }

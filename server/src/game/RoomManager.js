@@ -282,10 +282,14 @@ export class RoomManager {
     if (room.status !== "playing" || drawer?.id !== userId) return false;
     const cleanStroke = {
       id: String(stroke.id || nanoid()),
+      kind: stroke.kind === "shape" ? "shape" : "stroke",
       mode: stroke.mode === "erase" ? "erase" : "draw",
       color: String(stroke.color || "#57f7ff").slice(0, 24),
       size: Math.max(1, Math.min(64, Number(stroke.size || 6))),
-      points: Array.isArray(stroke.points) ? stroke.points.slice(-6).map((p) => ({ x: +p.x, y: +p.y })) : []
+      shape: String(stroke.shape || "brush").slice(0, 24),
+      points: Array.isArray(stroke.points) ? stroke.points.slice(-12).map((p) => ({ x: +p.x, y: +p.y })) : [],
+      start: stroke.start ? { x: +stroke.start.x, y: +stroke.start.y } : undefined,
+      end: stroke.end ? { x: +stroke.end.x, y: +stroke.end.y } : undefined
     };
     room.strokes.push(cleanStroke);
     if (room.strokes.length > 4000) room.strokes.shift();

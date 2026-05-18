@@ -5,7 +5,7 @@ export function PlayerList({ room, selfId, onKick }) {
   return (
     <GlassPanel className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-bold">Pilots</h3>
+        <h3 className="font-bold">Players</h3>
         <span className="text-xs text-cyanpop">{room.players?.length || 0}/{room.settings?.maxPlayers}</span>
       </div>
       <div className="space-y-2">

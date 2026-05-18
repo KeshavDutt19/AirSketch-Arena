@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Landing } from "./components/Landing.jsx";
 import { Lobby } from "./components/Lobby.jsx";
 import { GameScreen } from "./components/GameScreen.jsx";
@@ -11,6 +11,7 @@ export default function App() {
   const auth = useAuth();
   const socketState = useSocket();
   const socket = socketState.socket;
+  const profileUpdateTimer = useRef(null);
 
   const routeRoomCode = useMemo(() => {
     const match = window.location.pathname.match(/^\/room\/([A-Z0-9]{4,10})/i);
@@ -27,9 +28,19 @@ export default function App() {
     }
   }
 
-  useEffect(() => {
-    socket.emit("profile:update", { profile: auth.user });
-  }, [auth.user, socket]);
+  const commitUsername = useCallback(
+    (username) => {
+      const nextUser = auth.updateUsername(username);
+      clearTimeout(profileUpdateTimer.current);
+      profileUpdateTimer.current = setTimeout(() => {
+        socket.emit("profile:update", { profile: nextUser });
+      }, 250);
+      return nextUser;
+    },
+    [auth, socket]
+  );
+
+  useEffect(() => () => clearTimeout(profileUpdateTimer.current), []);
 
   useEffect(() => {
     if (!socket.connected) return undefined;
@@ -64,9 +75,9 @@ export default function App() {
         socketStatus={socketState.status}
         initialCode={routeRoomCode}
         onRoom={setRoom}
-        onUserChange={auth.updateUsername}
+        onUserChange={commitUsername}
       />
     );
   }
-  return <GameScreen room={room} setRoom={setRoom} socket={socket} socketStatus={socketState.status} user={activeUser} onUserChange={auth.updateUsername} />;
+  return <GameScreen room={room} setRoom={setRoom} socket={socket} socketStatus={socketState.status} user={activeUser} onUserChange={commitUsername} />;
 }
